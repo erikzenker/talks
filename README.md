@@ -1,6 +1,9 @@
 # Talks
 Talks I was giving in the past
 
+# 2017
+* `Boost::hana: Your C++14 Metaprogramming Library`: presented on the 9th November 2017 in Oberwiesenthal ([link](20171109_Dresden_BoostHana/boost_hana_talk.odp))
+
 # 2016
 * `Alpaka - The Last Programming Model for Parallel Kernel Acceleration You Will Ever Need`: presented at the C++ User Group on the 14th july 2016 in Dresden ([link](20160714_Dresden_CppUG_Alpaka/c++ug.odp))
 * `Performance-Portable Many Core Plasma Simulations: Porting PIConGPU to OpenPower and Beyond`: presented IWOPH workshop on the 23th june 2016 in Frankfurt ([link](20160623_Frankfurk_iwoph16_Alpaka/iwoph16_isc_hzdr_erik_zenker.odp))

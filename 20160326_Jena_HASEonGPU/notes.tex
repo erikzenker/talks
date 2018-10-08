@@ -1,0 +1,283 @@
+%
+% Template for videoprojector foils according to the HZDR corporate design
+% 
+% (C) 2011 Alexander Grahn, HZDR, Institut fuer Sicherheitsforschung
+%
+% Version 20131126
+%
+\documentclass[
+%  aspectratio=43, %default screen size (4:3); other values: 1610, 169, 149, 54, 32
+  smaller, %uncomment this to fit more text onto the slides (similar to the CD suggestions)
+  intlimits %put limits of integrals above and below the integral symbol
+]{beamer}
+
+\usepackage[UKenglish]{babel}
+
+%my favourite packages
+\usepackage[latin1]{inputenc} %type in accented characters easily, i. e. ä instead of \"a 
+\usepackage{ragged2e}\RaggedRight
+\usepackage{fancyvrb}
+\usepackage{ifthen}
+\setbeamercolor{alerted text}{fg=hzdr-orange}  %\alert{text to be highlighted},
+                                               %\begin{alertenv} ... \end{alertenv}
+                                               %\begin{alertblock}{block title (highlighted)}
+                                               %  ...
+                                               %\end{alertblock}
+
+\setbeamercolor{example text}{fg=hzdr-darkblue}%\begin{exampleblock}{block title (highlighted)}
+                                               %  ...
+                                               %\end{exampleblock}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%hzdr theme
+\makeatletter
+\def\input@path{{beamerthemehzdr/}}
+\makeatother
+\usetheme{hzdr}
+
+%%%%%%%%%%%% title, author, date, institute, additional logos %%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{HASEonGPU - NOTES}
+\subtitle{An Open-Source ASE code for calculating the gain in high power laser media on GPU clusters}% may be left empty, of course
+
+%[short version of authors to be used in footlines]{long version in the title page}
+\author[C. Eckert, E. Zenker et al.]{
+\texorpdfstring{\underline{Carlchristian Eckert}\inst{1}}{},
+\texorpdfstring{\underline{Erik Zenker}\inst{1}}{}
+}
+
+
+%\date{\today}
+\date{15th July 2014}
+
+\institute[
+ %short version of main authors' institute, used in the footline
+ \iflanguage{ngerman}{%
+   Institut für Strahlenphysik%
+ }{%
+   Institute of Radiation Physics%
+ }%
+]{%
+ %used in the title page
+ \iflanguage{ngerman}{%
+   \inst{1}Helmholtz-Zentrum Dresden-Rossendorf, Institut für Strahlenphysik\\
+ }{%
+   \inst{1}Helmholtz-Zentrum Dresden-Rossendorf, Institute of Radiation Physics\\
+ }%
+}
+\hypersetup{%
+  breaklinks,colorlinks,
+  %pdfpagemode=FullScreen,
+  pdfhighlight=/P,
+  linkcolor=hzdr-darkblue,
+  linkcolor=hzdr-darkblue,
+  anchorcolor=hzdr-darkblue,
+  citecolor=hzdr-darkblue,
+  filecolor=hzdr-darkblue,
+  menucolor=hzdr-darkblue,
+  runcolor=hzdr-darkblue,
+  urlcolor=hzdr-darkblue
+}
+
+
+\begin{document}
+
+\frame{\titlepage}
+\begin{frame}{Physical Process}
+  \begin{itemize}
+    \item gain medium is a central compontent of a laser
+    \item energy is stored in the medium through "pumping": energy is used to bring electrons in an excited state
+    \item if these excited electrons are hit by a photon, they drop to a lower energy level
+    \item a photon is emitted, which follows the same direction and phase as the stimulating photon
+    \item $\rightarrow$ the stimulating light is amplified
+    \item excited electrons have a half-life time: they will spontaneously fall to a lower energy level
+    \item this drop also produces a photon with a random direction
+    \item this spontaneously emitted photon also gets amplified
+    \item the amplification of these random photons is called Amplified Spontaneous Emission
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{ASE experiment}
+  \begin{itemize}
+    \item How does this process influence a laser?
+    \item graphic: the amplification of a stimulating laser after different pumping durations
+    \item Ideal case without ASE: more pumping $\rightarrow$ more excited electrons $\rightarrow$ more amplification
+    \item When the pumping process stops, the spontaneous emission will reduce the energy in the medium again $\rightarrow$ less amplification
+    \item Experimental measurement shows much less amplification
+    \item ASE will cause more excited electrons to emit a photon
+    \item This loss in energy reduces the possible amplification (light blue is the difference) 
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{ASE video}
+  \begin{itemize}
+    \item The ASE can be simulated and visualized for the whole gain medium
+    \item beginning: ASE increases with the amount of energy in the medium
+    \item after pump stops, ASE decreases as less energy is contained in the medium
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{ASE-temperature equilibrium}
+  \begin{itemize}
+    \item to design new laser systems and (e.g. to improve energy efficiency),
+      it is important to know the precise values for ASE
+    \item The process to calculate such an ASE distribution is usually very time-consuming (takes days)
+    \item For a precise result, the temperature influence must be considered
+    \item ASE is a process of energy loss $\rightarrow$ increases temperature in medium (rather fast)
+    \item Temperature changes influence the optical and mechanical properties of the gain medium itself (rather fast)
+    \item These changes in the medium need to be considered when calculating ASE
+    \item it's an iterative process
+    \item slowed down by ASE calculation
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{ASE as MonteCarlo}
+  \begin{itemize}
+    \item ASE can be examined for a single sample point in the gain medium
+    \item For this sample point, ASE can be modeled as a multidimensional integral
+    \item This is solvable through MC:
+    \item graphic: Gain medium, meshed into prisms. each prism can have different properties
+    \item Similar to spontaneous emission, random positions in the medium are
+      selected and a photon is strated towards the sample point
+    \item While travelling through the medium, the photons are amplified
+    \item The path and the amplification can be simulated with ray tracing techniques
+    \item When a ray passes through a prism, it is amplified according to the material parameters at this location
+    \item Total ASE at the position of a sample point: average of all ASE influences 
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Monte Carlo is parallel}
+  \begin{itemize}
+    \item This Monte Carlo approach is very well suited for parallelization:
+      each ray is completely independent, each sample point as well
+    \item We used CUDA
+    \item Perfect scenario for current accelerators 
+    \item Each CUDA thread computes path+amplification of a single ray
+    \item Each thread needs lots of data for the traversed prisms $\rightarrow$ many accesses to global memory
+    \item Solution: rays and threads are sorted in a way, that allows
+      successive threads (block/warp) to start their rays from similar
+      locations $\rightarrow$ caching
+    \item XeonPhi claims to have very good caching, might be interesting
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{MSE}
+  \begin{itemize}
+    \item Problem: how many spontaneous emissions are needed to simulate the physical process?
+    \item No clear answer: depends on the sample point
+      the ray. Certain areas might need more rays than others
+    \item General idea: low variance is a good indication for a stable/correct result
+    \item Solution: MSE is used to rate the quality of the simulation
+    \item Answer: MC is precise enough, when each sample point is simulated with a low MSE
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{IS}
+  \begin{itemize}
+    \item Now, some techniques to reduce the MSE for a given sample point (red)
+    \item Naive approach: uniform distribution of photons.
+    \item left: starting positions of rays for simulating the given sample point
+    \item right: Histogram of resulting MSE values, when whole gain medium is
+      simulated with the technique
+    \item observation: many sample points produce a quite high MSE
+    \item in this example: MSE of 0.005 is still acceptable. more is considered bad
+    \item Observation: rays from certain areas have a much higher influence on the result
+    \item Idea: increase photon density in those areas and weigh them appropriately
+    \item result: MSE could be reduced for some sample points, more precise
+      simulation with the same sampling resolution
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{AS}
+  \begin{itemize}
+    \item Some sample points will still produce high MSE values, even when using IS
+    \item if such a sample point is discovered, more photons/rays are
+      generated, to improve resolution. (red)
+    \item Number of rays can be increased, until the MSE of the sample point
+      crosses a threshold
+    \item for the whole gain medium, this means that no sample points are left
+      with a high MSE
+    \item Simulation is now precise enough!
+    \item however, sometimes a LOT of rays is necessary
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{RS}
+  \begin{itemize}
+    \item This huge number of rays on a few sample points is very expensive
+    \item Observation: sometimes, a bad random seed can cause very high MSE
+      values, even with many rays
+    \item Idea: instead of more rays, restart with different rays.
+    \item for most sample points, this works perfectly to get low MSE with less rays
+    \item In the example, the histogram shows that most sample points do NOT need to be sampled with $10^8$ rays.
+    \item Actually a difference of $3\cdot10^{10}$ rays, reducing simulation time by 50\%, same precision
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{MPI}
+  \begin{itemize}
+    \item All things considered so far were about simulating a sample point on a GPU
+    \item This process is to be repeated for each sample point
+    \item The interesting thing: all sample points are independent.
+    \item This is suited to be distributed on a cluster system
+    \item each GPU holds all the necessary data about the mesh (as in the previous cases)
+    \item each GPU COULD simulate the whole gain medium
+    \item additional Head Node which uses MPI to tell the GPU which sample point to
+      simulate next (as soon as the GPU is idle)
+    \item it is possible to add more GPUs/nodes, which will receive sample points to simulate
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Scaling on Clusters}
+  \begin{itemize}
+    \item Since the Head Node assigns new work as soon as a GPU is idle, this
+      provides load balancing between different sample points (some take longer
+      than others) 
+    \item Measurements with up to 64 GPUs show almost perfect strong scaling
+    \item Simply add more GPUs to improve performance
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Validation}
+  \begin{itemize}
+    \item How good is the simulation and the approach with MSE as a quality control
+    \item As a reminder: amplification plot from the real experiment
+    \item Now: high precision simulation, is able to predict the outcome of
+      experiments very closely
+    \item Takes about 7h on 1 GPU
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Speedup VS CPU}
+  \begin{itemize}
+    \item As a comparison: same algorithm as it was initially implemented as a
+      single-threaded program on a CPU
+    \item would take about 4 weeks
+    \item For larger gain media, a lot longer $\rightarrow$ not really practical
+    \item Speedup about 2 orders of magnitude
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Conclusion}
+  \begin{itemize}
+    \item As seen, the HASEonGPU software is able to predict ASE very
+      precisely, since it actually simulated the physical process, including
+      effects like reflections and polychromatic portions of the laser light
+    \item The software is a lot faster than current CPU implementations and
+      will scale very well.
+    \item This speedup allows to determine ASE for current gain media very fast
+    \item Looking into the future, this allows to simulate upcomping high-power
+      laser systems (for example petawatt lasers) in a reasonable amount of time
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Github}
+  \begin{itemize}
+    \item Thank you for your attention
+    \item And in case you are interested in this software, it will soon be
+      released on GitHub as Open Source 
+  \end{itemize}
+\end{frame}
+
+
+
+\end{document}

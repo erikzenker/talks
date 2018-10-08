@@ -1,0 +1,26 @@
+\autobookmark
+\begin{frame}[t]{Monte Carlo integration is embarrasingly parallel}
+  \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+      \myonly{1-3}{\includegraphics[height=0.55\paperheight]{graphics/monte_carlo_description_3.pdf}}
+      \myonly{4-}{\includegraphics[height=0.55\paperheight]{graphics/monte_carlo_description_4.pdf}}
+    \end{column}
+    \begin{column}{.5\textwidth}
+      \begin{itemize}
+        \myuncover{1}{4}{
+          \item Independent photons are a perfect scenario for accelerators (CUDA)
+        }
+        \myuncover{2}{4}{
+          \item Each thread computes the amplification of a single ray
+        }
+        \myuncover{3}{4}{
+          \item Many random accesses to global memory
+        }
+        \myuncover{4}{4}{
+          \item Successive threads start their rays in similar locations to
+            improve caching
+        }
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
